@@ -38,7 +38,6 @@ use Sonata\AdminBundle\Route\RouteGeneratorInterface;
 use Sonata\AdminBundle\Security\Handler\SecurityHandlerInterface;
 use Sonata\AdminBundle\Route\RouteCollection;
 use Sonata\AdminBundle\Model\ModelManagerInterface;
-use Sonata\AdminBundle\Exception\UndefinedSubClassException;
 
 use Knp\Menu\FactoryInterface as MenuFactoryInterface;
 use Knp\Menu\ItemInterface as MenuItemInterface;
@@ -888,25 +887,63 @@ abstract class Admin implements AdminInterface, DomainObjectInterface
     }
     
     /**
-     * Gets the subclass defined by the current request
+     * Gets the subclass corresponding to the given name
      *
-     * @return string|null
-     * @throws UndefinedSubClassException
+     * @param  string $name The name of the sub class
+     *
+     * @return string the subclass
      */
-    private function getSubClass()
+    protected function getSubClass($name)
     {
-        if ($this->request && null !== $subclass = $this->getRequest()->get('subclass')) {
-            if (isset($this->subClasses[$subclass])) {
-                return $this->subClasses[$subclass];
-            }
-            else {
-                throw new UndefinedSubClassException('Cannot find subclass with corresponding index "'.$subclass.'"');
-            }
+        if ($this->hasSubClass($name)) {
+            return $this->subClasses[$name];
         }
 
         return null;
     }
     
+    /**
+      * Returns true if the admin has the sub classes
+      *
+      * @param  string $name The name of the sub class
+      *
+      * @return bool
+      */
+     public function hasSubClass($name)
+     {
+         return isset($this->subClasses[$name]);
+     }
+
+     /**
+      * Returns true if a subclass is currently active
+      *
+      * @return bool
+      */
+     public function hasActiveSubClass()
+     {
+         if ($this->request) {
+             return null !== $this->getRequest()->get('subclass');
+         }
+
+         return false;
+     }
+
+     /**
+      * Returns the currently active sub class
+      *
+      * @return string the active sub class
+      */
+     public function getActiveSubClass()
+     {
+         if (!$this->hasActiveSubClass()) {
+             return null;
+         }
+
+         $subClass = $this->getRequest()->get('subclass');
+
+         return $this->getSubClass($subClass);
+     }
+     
     /**
      * Returns the list of batchs actions
      *
@@ -1114,7 +1151,7 @@ abstract class Admin implements AdminInterface, DomainObjectInterface
      */
     public function getNewInstance()
     {
-        return $this->getModelManager()->getModelInstance($this->getSubClass()?:$this->getClass());
+        return $this->getModelManager()->getModelInstance($this->getActiveSubClass() ?: $this->getClass());
     }
 
     /**
@@ -1145,7 +1182,7 @@ abstract class Admin implements AdminInterface, DomainObjectInterface
             }
         )));
 
-        $this->formOptions['data_class'] = $this->getSubClass()?:$this->getClass();
+        $this->formOptions['data_class'] = $this->getActiveSubClass() ?: $this->getClass();
 
         $formBuilder = $this->getFormContractor()->getFormBuilder(
             $this->getUniqid(),

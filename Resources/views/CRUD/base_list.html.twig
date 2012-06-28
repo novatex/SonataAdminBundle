@@ -13,27 +13,7 @@ file that was distributed with this source code.
 
 {% block actions %}
     <div class="sonata-actions">
-        <ul>
-            {% if admin.hasRoute('create') and admin.isGranted('CREATE')%}
-            {% if admin.subClasses is empty %}
-                <a class="btn" href="{{ admin.generateUrl('create') }}">{% trans from 'SonataAdminBundle' %}link_action_create{% endtrans %}</a>
-            {% else %}
-                <div class="btn-group">
-                    <a class="btn dropdown-toggle" data-toggle="dropdown" href="#">
-                        {% trans from 'SonataAdminBundle' %}link_action_create{% endtrans %}
-                        <span class="caret"></span>
-                    </a>
-                    <ul class="dropdown-menu">
-                        {% for subclass in admin.subclasses|keys %}
-                            <li>
-                                <a href="{{ admin.generateUrl('create', {'subclass': subclass}) }}">{{ subclass }}</a>
-                            </li>
-                        {% endfor %}
-                    </ul>
-                </div>
-            {% endif %}
-            {% endif %}
-        </ul>
+      {% include 'SonataAdminBundle:Core:create_button.html.twig' %}
     </div>
 {% endblock %}
 
