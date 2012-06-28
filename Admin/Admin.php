@@ -38,6 +38,7 @@ use Sonata\AdminBundle\Route\RouteGeneratorInterface;
 use Sonata\AdminBundle\Security\Handler\SecurityHandlerInterface;
 use Sonata\AdminBundle\Route\RouteCollection;
 use Sonata\AdminBundle\Model\ModelManagerInterface;
+use Sonata\AdminBundle\Exception\UndefinedSubClassException;
 
 use Knp\Menu\FactoryInterface as MenuFactoryInterface;
 use Knp\Menu\ItemInterface as MenuItemInterface;
@@ -887,6 +888,26 @@ abstract class Admin implements AdminInterface, DomainObjectInterface
     }
     
     /**
+     * Gets the subclass defined by the current request
+     *
+     * @return string|null
+     * @throws UndefinedSubClassException
+     */
+    private function getSubClass()
+    {
+        if ($this->request && null !== $subclass = $this->getRequest()->get('subclass')) {
+            if (isset($this->subClasses[$subclass])) {
+                return $this->subClasses[$subclass];
+            }
+            else {
+                throw new UndefinedSubClassException('Cannot find subclass with corresponding index "'.$subclass.'"');
+            }
+        }
+
+        return null;
+    }
+    
+    /**
      * Returns the list of batchs actions
      *
      * @return array the list of batchs actions
@@ -1093,15 +1114,7 @@ abstract class Admin implements AdminInterface, DomainObjectInterface
      */
     public function getNewInstance()
     {
-        $class = null;
-
-        if ($this->request &&
-            null !== ($subclass = $this->getRequest()->get('subclass')) &&
-            isset($this->subClasses[$subclass])) {
-            $class = $this->subClasses[$subclass];
-        }
-
-        return $this->getModelManager()->getModelInstance($class?:$this->getClass());
+        return $this->getModelManager()->getModelInstance($this->getSubClass()?:$this->getClass());
     }
 
     /**
@@ -1132,14 +1145,7 @@ abstract class Admin implements AdminInterface, DomainObjectInterface
             }
         )));
 
-        if ($this->request &&
-            null !== ($subclass = $this->getRequest()->get('subclass')) &&
-            isset($this->subClasses[$subclass])) {
-            $this->formOptions['data_class'] = $this->subClasses[$subclass];
-        }
-        else {
-            $this->formOptions['data_class'] = $this->getClass();
-        }
+        $this->formOptions['data_class'] = $this->getSubClass()?:$this->getClass();
 
         $formBuilder = $this->getFormContractor()->getFormBuilder(
             $this->getUniqid(),
