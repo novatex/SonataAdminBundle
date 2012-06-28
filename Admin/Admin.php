@@ -495,11 +495,12 @@ abstract class Admin implements AdminInterface, DomainObjectInterface
      * @param string $class
      * @param string $baseControllerName
      */
-    public function __construct($code, $class, $baseControllerName)
+    public function __construct($code, $class, $baseControllerName, $subClasses = null)
     {
         $this->code                 = $code;
         $this->class                = $class;
         $this->baseControllerName   = $baseControllerName;
+        $this->subClasses           = $subClasses;
     }
 
     /**
