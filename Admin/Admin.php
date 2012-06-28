@@ -56,6 +56,13 @@ abstract class Admin implements AdminInterface, DomainObjectInterface
     private $class;
 
     /**
+     * The subclasses supported by the admin class
+     *
+     * @var array
+     */
+    private $subClasses = array();
+    
+    /**
      * The list collection
      *
      * @var array
@@ -860,6 +867,26 @@ abstract class Admin implements AdminInterface, DomainObjectInterface
     }
 
     /**
+     * Returns the list of supported sub classes
+     *
+     * @return array the list of sub classes
+     */
+    public function getSubClasses()
+    {
+        return $this->subClasses;
+    }
+
+    /**
+     * Sets the list of supported sub classes
+     *
+     * @param array $subClasses the list of sub classes
+     */
+    public function setSubClasses(array $subClasses)
+    {
+        $this->subClasses = $subClasses;
+    }
+    
+    /**
      * Returns the list of batchs actions
      *
      * @return array the list of batchs actions
@@ -1066,7 +1093,15 @@ abstract class Admin implements AdminInterface, DomainObjectInterface
      */
     public function getNewInstance()
     {
-        return $this->getModelManager()->getModelInstance($this->getClass());
+        $class = null;
+
+        if ($this->request &&
+            null !== ($subclass = $this->getRequest()->get('subclass')) &&
+            isset($this->subClasses[$subclass])) {
+            $class = $this->subClasses[$subclass];
+        }
+
+        return $this->getModelManager()->getModelInstance($class?:$this->getClass());
     }
 
     /**
@@ -1097,7 +1132,14 @@ abstract class Admin implements AdminInterface, DomainObjectInterface
             }
         )));
 
-        $this->formOptions['data_class'] = $this->getClass();
+        if ($this->request &&
+            null !== ($subclass = $this->getRequest()->get('subclass')) &&
+            isset($this->subClasses[$subclass])) {
+            $this->formOptions['data_class'] = $this->subClasses[$subclass];
+        }
+        else {
+            $this->formOptions['data_class'] = $this->getClass();
+        }
 
         $formBuilder = $this->getFormContractor()->getFormBuilder(
             $this->getUniqid(),
